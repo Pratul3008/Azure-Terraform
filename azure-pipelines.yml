@@ -1,0 +1,53 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: TerraformInstaller@1
+  displayName: 'Installing Terraform'
+  inputs:
+    terraformVersion: 'latest'
+- task: TerraformTaskV4@4
+  displayName: 'Initializing terraform working directory'
+  inputs:
+    provider: 'azurerm'
+    command: 'init'
+    backendServiceArm: 'Free Trial(1)(8fc9433b-527c-4dde-9302-23433c5e0794)'
+    backendAzureRmResourceGroupName: 'pratul-learn-rg'
+    backendAzureRmStorageAccountName: 'pratulstorage'
+    backendAzureRmContainerName: 'source'
+    backendAzureRmKey: 'prod.terraform.tfstate'
+- task: TerraformTaskV4@4
+  displayName: 'Checking Terraform config files syntax'
+  inputs:
+    provider: 'azurerm'
+    command: 'validate'
+- task: TerraformTaskV4@4
+  displayName: 'Preparing Terraform Execution Plan'
+  inputs:
+    provider: 'azurerm'
+    command: 'plan'
+    environmentServiceNameAzureRM: 'Free Trial(8fc9433b-527c-4dde-9302-23433c5e0794)'
+- task: ArchiveFiles@2
+  displayName: 'Archiving Terraform Config Files'
+  inputs:
+    rootFolderOrFile: '$(Build.SourcesDirectory)'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    replaceExistingArchive: true
+- task: PublishBuildArtifacts@1
+  displayName: 'Publishing Artifacts'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: '$(Build.BuildId)-build'
+    publishLocation: 'Container'
+
+
